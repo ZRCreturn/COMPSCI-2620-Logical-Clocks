@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+
+package logic_clock;
+
+
+message MessageRequest {
+  int64 clock = 1;
+
+  string content = 2;
+}
+
+
+message MessageReply {
+  string status = 1; 
+}
+
+service VMService {
+  rpc SendMessage (MessageRequest) returns (MessageReply);
+}
