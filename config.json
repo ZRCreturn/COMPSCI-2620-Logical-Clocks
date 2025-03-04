@@ -1,0 +1,20 @@
+{
+    "VMs": [
+      {
+        "name": "A",
+        "port": 50051,
+        "clock_rate": 2
+      },
+      {
+        "name": "B",
+        "port": 50052,
+        "clock_rate": 4
+      },
+      {
+        "name": "C",
+        "port": 50053,
+        "clock_rate": 6
+      }
+    ]
+  }
+  
