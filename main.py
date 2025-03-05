@@ -82,7 +82,7 @@ def vm_main(vm_config):
 
             # 2) Otherwise, pick a random number 1-10 to decide sending or internal event
             else:
-                r = random.randint(1, 10)
+                r = random.randint(1, 10)  # TODO: simulate different event probabilities
                 if r == 1:
                     send_message_to_peer(peers[0], local_logical_clock, vm_name)
                     local_logical_clock += 1

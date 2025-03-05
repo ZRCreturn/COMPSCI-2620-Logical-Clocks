@@ -172,7 +172,7 @@ In VM B, the logical clock often increases by 1 during internal events, but when
 
 ### Drift Between Machines
 
-![drift](./log/logical_clock_progression.png)
+![drift](./log/logical_clock_progression_original.png)
 
 Each VM’s logical clock value is plotted against real system time. A steeper slope means that the VM’s clock value is increasing more quickly. In the figure, C (blue) and B (green, overlapped) has the highest slope, indicating it increments its logical clock faster.
 A (red) has a flatter slope (a drift between the clocks). Some lines may show occasional large upward jumps. These jumps often occur when a VM receives a message with a high timestamp from another VM, as decribed in the logical clock jumps section.
@@ -219,6 +219,90 @@ Name: queue_length, dtype: float64
 ```
 
 VM A has both the most count of the message receiving (which is discussed in the drift section) and the longest average message queue (70.97); while VM B and VM C have the queue length of nearly one or exact one. This is consistent with what we've suggested in the drift section - the VM A is busy with handling accumulative messages, while VM B and VM C can handle them in time due to their higher speed, and few messages from VM A, which is also originated from their relatively high speed.
+
+### Log File Examination with Variation
+
+In this experiment we change the probability of the internal process - the range of the random number determining the event is changed from 1~10 to 1~5. The logical clock jump, message queue length and the drift between machines are shown below:
+
+#### Logical Clock Jump:
+
+```
+Descriptive Statistics for VM A:
+count    686.000000
+mean       1.195335
+std        0.581748
+min        1.000000
+25%        1.000000
+50%        1.000000
+75%        1.000000
+max        5.000000
+Name: clock_diff, dtype: float64
+
+Descriptive Statistics for VM B:
+count    1360.000000
+mean        1.472059
+std         1.245725
+min         1.000000
+25%         1.000000
+50%         1.000000
+75%         1.000000
+max        11.000000
+Name: clock_diff, dtype: float64
+
+Descriptive Statistics for VM C:
+count    2016.0
+mean        1.0
+std         0.0
+min         1.0
+25%         1.0
+50%         1.0
+75%         1.0
+max         1.0
+Name: clock_diff, dtype: float64
+```
+
+#### Drift Between Machines
+
+![drift2](./log/logical_clock_progression_var.png)
+
+#### Message Queue Length
+
+```
+Queue Length Statistics for VM A:
+count    691.000000
+mean     101.723589
+std       58.787411
+min        1.000000
+25%       51.000000
+50%      104.000000
+75%      148.500000
+max      224.000000
+Name: queue_length, dtype: float64
+
+Queue Length Statistics for VM B:
+count    350.000000
+mean       1.117143
+std        0.330828
+min        1.000000
+25%        1.000000
+50%        1.000000
+75%        1.000000
+max        3.000000
+Name: queue_length, dtype: float64
+
+Queue Length Statistics for VM C:
+count    210.0
+mean       1.0
+std        0.0
+min        1.0
+25%        1.0
+50%        1.0
+75%        1.0
+max        1.0
+Name: queue_length, dtype: float64
+```
+
+That internal process probability decreases means the message passing probability increases, so the queue length of VM A increases (71 -> 102). This is consistent with the drift plot - the drift between VM A and VM B/C increases, since the VM A is more likely to be overwhelmed by the messages and cannot catch up with other machines.
 
 ---
 
