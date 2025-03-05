@@ -1,3 +1,4 @@
+import os
 import json
 import time
 import grpc
@@ -6,8 +7,10 @@ import logic_clock_pb2
 import logic_clock_pb2_grpc
 
 vm_list = []
+vm_log_filename = {}
 
 def init():
+    os.makedirs("log", exist_ok=True)
     with open('config.json', 'r') as f:
         config_data = json.load(f)
         return config_data["VMs"]
@@ -37,6 +40,15 @@ def get_peers(name, lenth):
     peers = [c for c in alphabet if c != name]  
     return peers[:lenth] 
 
+
+def get_next_log_filename(vm_name):
+    i = 0
+    filename = f"log/{vm_name}.{i}.log"
+    while os.path.exists(filename):
+        i += 1
+        filename = f"log/{vm_name}.{i}.log"
+    return filename
+
 def log_event(vm_name, event_type, logical_clock, queue_length=None, target_peers=None):
     """Log events to a file with timestamp and relevant information"""
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -50,7 +62,7 @@ def log_event(vm_name, event_type, logical_clock, queue_length=None, target_peer
     elif event_type == "INTERNAL":
         log_entry += f" [INTERNAL] Logical Clock: {logical_clock}"
     
-    with open(f"{vm_name}.log", "a") as f:
+    with open(vm_log_filename[vm_name], "a") as f:
         f.write(log_entry + "\n")
 
 

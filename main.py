@@ -6,7 +6,7 @@ from concurrent import futures
 from queue import Queue
 import grpc
 
-from tools import get_peers, send_message_to_peer, log_event
+from tools import get_peers, send_message_to_peer, log_event, vm_log_filename, get_next_log_filename
 import logic_clock_pb2
 import logic_clock_pb2_grpc
 
@@ -48,15 +48,14 @@ def vm_main(vm_config):
     port = vm_config["port"]
     clock_rate = vm_config["clock_rate"]
 
+    vm_log_filename[vm_name] = get_next_log_filename(vm_name)
+
     peers = get_peers(vm_name, 2)
 
     local_logical_clock = 0
 
     # Thread-safe queue to store incoming messages
     message_queue = Queue()
-
-    with open(f"{vm_name}.log", "w") as f:
-        f.write("") 
 
     # Start the gRPC server in a separate thread
     server_thread = threading.Thread(
