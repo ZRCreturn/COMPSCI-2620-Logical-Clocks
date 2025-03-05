@@ -174,7 +174,14 @@ In VM B, the logical clock often increases by 1 during internal events, but when
 
 ![drift](./log/logical_clock_progression.png)
 
+Each VM’s logical clock value is plotted against real system time. A steeper slope means that the VM’s clock value is increasing more quickly. In the figure, C (blue) and B (green, overlapped) has the highest slope, indicating it increments its logical clock faster.
+A (red) has a flatter slope (a drift between the clocks). Some lines may show occasional large upward jumps. These jumps often occur when a VM receives a message with a high timestamp from another VM, as decribed in the logical clock jumps section.
+
+The difference among the curves comes from the different speed of those VMs. A VM with more ticks/second effectively has more opportunities to increment its logical clock. A slower VM needs some execution time to consume the messages from other VMs, thus are likely to be unable to follow up with other VMs. For VM B, although it is slower than VM C, it doesn't receive so many messages as VM A does since VM A is occupied by handling receiving messages and is likely to be unable to send messages and thus only receives messages from VM C. Therefore, it is still possible for VM B to catch up with VM C, and reaches a similar clock pace.
+
 ### Message Queue Length
+
+The descriptive statistics for message queue lengths in each machine are as follows:
 
 ```
 Queue Length Statistics for VM A:
@@ -210,6 +217,10 @@ min        1.0
 max        1.0
 Name: queue_length, dtype: float64
 ```
+
+VM A has both the most count of the message receiving (which is discussed in the drift section) and the longest average message queue (70.97); while VM B and VM C have the queue length of nearly one or exact one. This is consistent with what we've suggested in the drift section - the VM A is busy with handling accumulative messages, while VM B and VM C can handle them in time due to their higher speed, and few messages from VM A, which is also originated from their relatively high speed.
+
+---
 
 ## Conclusion
 
