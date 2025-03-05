@@ -100,7 +100,7 @@ def load_all_logs(log_directory):
         all_entries.extend(entries)
     return pd.DataFrame(all_entries)
 
-def analyze_log_data(df):
+def analyze_log_data(df, save=None):
     # Sort by timestamp per VM and per file.
     df.sort_values(['vm', 'filename', 'timestamp'], inplace=True)
 
@@ -135,6 +135,8 @@ def analyze_log_data(df):
     ax.legend()
     plt.xticks(rotation=45)
     plt.tight_layout()
+    if save:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
     plt.show()
 
     return df
@@ -142,6 +144,6 @@ def analyze_log_data(df):
 if __name__ == "__main__":
     log_directory = "./log"  # Update with the correct log directory path.
     df = load_all_logs(log_directory)
-    df = analyze_log_data(df)
+    df = analyze_log_data(df, save=f"{log_directory}/logical_clock_progression.png")
     # Optionally export the aggregated data for further analysis.
     # df.to_csv(f"{log_directory}/aggregated_log_analysis.csv", index=False)
