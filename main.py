@@ -55,6 +55,9 @@ def vm_main(vm_config):
     # Thread-safe queue to store incoming messages
     message_queue = Queue()
 
+    with open(f"{vm_name}.log", "w") as f:
+        f.write("") 
+
     # Start the gRPC server in a separate thread
     server_thread = threading.Thread(
         target=serve_gRPC,
