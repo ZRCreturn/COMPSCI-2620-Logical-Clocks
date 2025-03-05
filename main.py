@@ -6,7 +6,7 @@ from concurrent import futures
 from queue import Queue
 import grpc
 
-from tools import get_peers, send_message_to_peer
+from tools import get_peers, send_message_to_peer, log_event
 import logic_clock_pb2
 import logic_clock_pb2_grpc
 
@@ -72,10 +72,11 @@ def vm_main(vm_config):
 
             # 1) If there's a message in the queue, process it
             if not message_queue.empty():
+                qsize = message_queue.qsize()
                 msg = message_queue.get()
                 # Update logical clock: max(local, remote) + 1
                 local_logical_clock = max(local_logical_clock, msg["clock"]) + 1
-                print(f"[{vm_name}] [RECEIVE] Updated local clock => {local_logical_clock}")
+                log_event(vm_name, "RECEIVE", local_logical_clock, queue_length=qsize)
 
             # 2) Otherwise, pick a random number 1-10 to decide sending or internal event
             else:
@@ -83,20 +84,20 @@ def vm_main(vm_config):
                 if r == 1:
                     send_message_to_peer(peers[0], local_logical_clock)
                     local_logical_clock += 1
-                    print(f"[{vm_name}] [SEND #1] local_clock={local_logical_clock} (send to {peers[0]})")
+                    log_event(vm_name, "SEND", local_logical_clock, target_peers=[peers[0]])
                 elif r == 2:
                     send_message_to_peer(peers[0], local_logical_clock)
                     local_logical_clock += 1
-                    print(f"[{vm_name}] [SEND #2] local_clock={local_logical_clock} (send to {peers[1]})")
+                    log_event(vm_name, "SEND", local_logical_clock, target_peers=[peers[1]])
                 elif r == 3:
                     send_message_to_peer(peers[0], local_logical_clock)
                     send_message_to_peer(peers[1], local_logical_clock)
                     local_logical_clock += 1
-                    print(f"[{vm_name}] [SEND #3] local_clock={local_logical_clock} (send to {peers[0]} and {peers[1]})")
+                    log_event(vm_name, "SEND", local_logical_clock, target_peers=peers)
                 else:
                     # Internal event
                     local_logical_clock += 1
-                    print(f"[{vm_name}] [INTERNAL] local_clock={local_logical_clock}")
+                    log_event(vm_name, "INTERNAL", local_logical_clock)
 
     except KeyboardInterrupt:
         print(f"[{vm_name}] Shutting down...")
