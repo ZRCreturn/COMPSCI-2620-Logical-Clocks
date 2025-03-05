@@ -78,22 +78,22 @@ def vm_main(vm_config):
                 msg = message_queue.get()
                 # Update logical clock: max(local, remote) + 1
                 local_logical_clock = max(local_logical_clock, msg["clock"]) + 1
-                log_event(vm_name, "RECEIVE", local_logical_clock, queue_length=qsize)
+                log_event(vm_name, "RECEIVE", local_logical_clock, queue_length=qsize, target_peers=msg["content"])
 
             # 2) Otherwise, pick a random number 1-10 to decide sending or internal event
             else:
                 r = random.randint(1, 10)
                 if r == 1:
-                    send_message_to_peer(peers[0], local_logical_clock)
+                    send_message_to_peer(peers[0], local_logical_clock, vm_name)
                     local_logical_clock += 1
                     log_event(vm_name, "SEND", local_logical_clock, target_peers=[peers[0]])
                 elif r == 2:
-                    send_message_to_peer(peers[0], local_logical_clock)
+                    send_message_to_peer(peers[0], local_logical_clock, vm_name)
                     local_logical_clock += 1
                     log_event(vm_name, "SEND", local_logical_clock, target_peers=[peers[1]])
                 elif r == 3:
-                    send_message_to_peer(peers[0], local_logical_clock)
-                    send_message_to_peer(peers[1], local_logical_clock)
+                    send_message_to_peer(peers[0], local_logical_clock, vm_name)
+                    send_message_to_peer(peers[1], local_logical_clock, vm_name)
                     local_logical_clock += 1
                     log_event(vm_name, "SEND", local_logical_clock, target_peers=peers)
                 else:

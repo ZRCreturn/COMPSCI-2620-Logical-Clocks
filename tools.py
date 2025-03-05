@@ -18,8 +18,8 @@ def init():
 def send_message_to_peer(name, clock, content = "test"):
     port = 50051
     for vm in vm_list:
-        if vm[name] == name:
-            port = vm[port]
+        if vm["name"] == name:
+            port = vm["port"]
 
     target_address = "localhost:{}".format(port)
 
@@ -55,10 +55,11 @@ def log_event(vm_name, event_type, logical_clock, queue_length=None, target_peer
     log_entry = f"{timestamp} [{vm_name}]"
     
     if event_type == "RECEIVE":
-        log_entry += f" [RECEIVE] Queue Length: {queue_length}, Logical Clock: {logical_clock}"
+        peers_str = ", ".join(target_peers)
+        log_entry += f" [RECEIVE ] from: {peers_str}, Queue Length: {queue_length}, Logical Clock: {logical_clock}"
     elif event_type == "SEND":
         peers_str = ", ".join(target_peers)
-        log_entry += f" [SEND] To: {peers_str}, Logical Clock: {logical_clock}"
+        log_entry += f" [SEND    ] To: {peers_str}, Logical Clock: {logical_clock}"
     elif event_type == "INTERNAL":
         log_entry += f" [INTERNAL] Logical Clock: {logical_clock}"
     
@@ -66,4 +67,4 @@ def log_event(vm_name, event_type, logical_clock, queue_length=None, target_peer
         f.write(log_entry + "\n")
 
 
-init()
+vm_list = init()
