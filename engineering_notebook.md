@@ -116,6 +116,196 @@ In our system, each VM communicates with a fixed number of peers. The `get_peers
 ---
 
 
+## Log File Examination
+
+In the `log_analysis.py` file, we read the log file for each VM and each run, and analyze the jumps in the values for the logical clocks, the drifts in the values of the logical clocks in the different machines, and the message queue length of each machine, in order to examine their relationship with the clock speed.
+
+### Logical Clock Jumps
+
+The descriptive statistics for logical clock jumps in each machine are as follows:
+
+```
+Descriptive Statistics for VM A:
+count    1648.000000
+mean        2.162015
+std         1.872328
+min         1.000000
+25%         1.000000
+50%         1.000000
+75%         3.000000
+max        16.000000
+Name: clock_diff, dtype: float64
+
+Descriptive Statistics for VM B:
+count    3264.000000
+mean        1.479779
+std         1.701135
+min         1.000000
+25%         1.000000
+50%         1.000000
+75%         1.000000
+max        25.000000
+Name: clock_diff, dtype: float64
+
+Descriptive Statistics for VM C:
+count    4844.0
+mean        1.0
+std         0.0
+min         1.0
+25%         1.0
+50%         1.0
+75%         1.0
+max         1.0
+Name: clock_diff, dtype: float64
+```
+
+It is clear that VM A has the highest average clock jump size (2.16), then VM B (1.48) and VM C (1.00). Logical clock jump occurs only when a VM triggers a `RECEIVE` event (a necessary but not sufficient condition), so that the clock from another VM is synchronized to the current VM clock (if the fetched clock is faster). For example, in the `log/B.0.log`:
+
+```
+2025-03-05 12:29:33 [B] [INTERNAL] Logical Clock: 1
+2025-03-05 12:29:34 [B] [INTERNAL] Logical Clock: 2
+2025-03-05 12:29:34 [B] [INTERNAL] Logical Clock: 3
+2025-03-05 12:29:34 [B] [RECEIVE ] from: A, Queue Length: 1, Logical Clock: 4
+2025-03-05 12:29:34 [B] [RECEIVE ] from: C, Queue Length: 1, Logical Clock: 7
+```
+In VM B, the logical clock often increases by 1 during internal events, but when it got a RECEIVE event from VM C, we see jumps from 4 to 7. This indicates that the received message had a logical clock value (VM C, 6 executions per second) much higher than B’s local clock, forcing an update via the rule max(local, received) + 1. This explains why the average clock jump size increases as the clock speed decreases.
+
+### Drift Between Machines
+
+![drift](./log/logical_clock_progression_original.png)
+
+Each VM’s logical clock value is plotted against real system time. A steeper slope means that the VM’s clock value is increasing more quickly. In the figure, C (blue) and B (green, overlapped) has the highest slope, indicating it increments its logical clock faster.
+A (red) has a flatter slope (a drift between the clocks). Some lines may show occasional large upward jumps. These jumps often occur when a VM receives a message with a high timestamp from another VM, as decribed in the logical clock jumps section.
+
+The difference among the curves comes from the different speed of those VMs. A VM with more ticks/second effectively has more opportunities to increment its logical clock. A slower VM needs some execution time to consume the messages from other VMs, thus are likely to be unable to follow up with other VMs. For VM B, although it is slower than VM C, it doesn't receive so many messages as VM A does since VM A is occupied by handling receiving messages and is likely to be unable to send messages and thus only receives messages from VM C. Therefore, it is still possible for VM B to catch up with VM C, and reaches a similar clock pace.
+
+### Message Queue Length
+
+The descriptive statistics for message queue lengths in each machine are as follows:
+
+```
+Queue Length Statistics for VM A:
+count    1649.000000
+mean       70.970285
+std        49.101697
+min         1.000000
+25%        34.000000
+50%        60.000000
+75%       103.000000
+max       199.000000
+Name: queue_length, dtype: float64
+
+Queue Length Statistics for VM B:
+count    452.000000
+mean       1.024336
+std        0.154262
+min        1.000000
+25%        1.000000
+50%        1.000000
+75%        1.000000
+max        2.000000
+Name: queue_length, dtype: float64
+
+Queue Length Statistics for VM C:
+count    293.0
+mean       1.0
+std        0.0
+min        1.0
+25%        1.0
+50%        1.0
+75%        1.0
+max        1.0
+Name: queue_length, dtype: float64
+```
+
+VM A has both the most count of the message receiving (which is discussed in the drift section) and the longest average message queue (70.97); while VM B and VM C have the queue length of nearly one or exact one. This is consistent with what we've suggested in the drift section - the VM A is busy with handling accumulative messages, while VM B and VM C can handle them in time due to their higher speed, and few messages from VM A, which is also originated from their relatively high speed.
+
+### Log File Examination with Variation
+
+In this experiment we change the probability of the internal process - the range of the random number determining the event is changed from 1~10 to 1~5. The logical clock jump, message queue length and the drift between machines are shown below:
+
+#### Logical Clock Jump:
+
+```
+Descriptive Statistics for VM A:
+count    686.000000
+mean       1.195335
+std        0.581748
+min        1.000000
+25%        1.000000
+50%        1.000000
+75%        1.000000
+max        5.000000
+Name: clock_diff, dtype: float64
+
+Descriptive Statistics for VM B:
+count    1360.000000
+mean        1.472059
+std         1.245725
+min         1.000000
+25%         1.000000
+50%         1.000000
+75%         1.000000
+max        11.000000
+Name: clock_diff, dtype: float64
+
+Descriptive Statistics for VM C:
+count    2016.0
+mean        1.0
+std         0.0
+min         1.0
+25%         1.0
+50%         1.0
+75%         1.0
+max         1.0
+Name: clock_diff, dtype: float64
+```
+
+#### Drift Between Machines
+
+![drift2](./log/logical_clock_progression_var.png)
+
+#### Message Queue Length
+
+```
+Queue Length Statistics for VM A:
+count    691.000000
+mean     101.723589
+std       58.787411
+min        1.000000
+25%       51.000000
+50%      104.000000
+75%      148.500000
+max      224.000000
+Name: queue_length, dtype: float64
+
+Queue Length Statistics for VM B:
+count    350.000000
+mean       1.117143
+std        0.330828
+min        1.000000
+25%        1.000000
+50%        1.000000
+75%        1.000000
+max        3.000000
+Name: queue_length, dtype: float64
+
+Queue Length Statistics for VM C:
+count    210.0
+mean       1.0
+std        0.0
+min        1.0
+25%        1.0
+50%        1.0
+75%        1.0
+max        1.0
+Name: queue_length, dtype: float64
+```
+
+That internal process probability decreases means the message passing probability increases, so the queue length of VM A increases (71 -> 102). This is consistent with the drift plot - the drift between VM A and VM B/C increases, since the VM A is more likely to be overwhelmed by the messages and cannot catch up with other machines.
+
+---
+
 ## Conclusion
 
 Overall, this project successfully simulated a simple asynchronous distributed system with logical clocks. It helped us understand how machines with different clock rates can interact in a distributed environment and how their logical clocks can stay consistent despite running asynchronously. The system’s design is flexible, and we could easily scale it by adding more VMs or changing the communication patterns. We learned a lot about how distributed systems work and how important logical clocks are for maintaining event order.
